@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <string.h>
 #include <boost/foreach.hpp>
+#include <thread>
 
 #include "server.hpp"
 //TODO: check necessary
@@ -60,15 +61,20 @@ void connection::do_read() {
 			cur_prefix.erase(cur_prefix.end() - 1, cur_prefix.end());
 	}
 	
+	auto sstat = ServerStats::getInstance();
 	if((*handlers_)[cur_prefix] != nullptr)
 	{       
 		(*handlers_)[cur_prefix]->HandleRequest(*request_, &response_);
-		ServerStats::getInstance().insertRequest(cur_prefix, response_.getResponseCode());
+		sstat.lockMutex();
+		sstat.insertRequest(cur_prefix, response_.getResponseCode());
+		sstat.unlockMutex();
 	}
 	else 
 	{
 		(*handlers_)["default"]->HandleRequest(*request_, &response_);
-		ServerStats::getInstance().insertRequest("default", response_.getResponseCode());
+		sstat.lockMutex();
+		sstat.insertRequest("default", response_.getResponseCode());
+		sstat.unlockMutex();
 	}
         do_write();
       });
@@ -121,6 +127,7 @@ server::server(const std::string& address, const std::string& sconfig_path)
 }
 
 void server::InitHandlers() {
+	auto sstat = ServerStats::getInstance();
 	BOOST_FOREACH(auto path_element, config->GetPaths()) 
 	{
 		Path* path = std::get<1>(path_element);
@@ -128,15 +135,19 @@ void server::InitHandlers() {
   		handler->Init(path->token, *(path->child_block_));
 		handlers_[path->token] = handler;
 
-		//inserting handler info to server stats (used for status handler)s
-		ServerStats::getInstance().insertHandler(path->token, path->handler_name);
+		//inserting handler info to server stats (used for status handler)
+		sstat.lockMutex();
+		sstat.insertHandler(path->token, path->handler_name);
+		sstat.unlockMutex();
 	}
 
 	Path* default_ = std::get<1>(config->GetDefault());
 	auto handler = RequestHandler::CreateByName(default_->handler_name);
 	handler->Init(default_->token, *(default_->child_block_));
 	handlers_["default"] = handler;
-	ServerStats::getInstance().insertHandler("default", default_->handler_name);
+	sstat.lockMutex();
+	sstat.insertHandler("default", default_->handler_name);
+	sstat.unlockMutex();
 }
 
 server::~server() {
@@ -167,8 +178,13 @@ void server::do_accept() {
 	  if(config != nullptr)
 	  {
           	std::shared_ptr<connection> con = std::make_shared<connection>(std::move(socket_));
+
 		con->handlers_ = &handlers_;
-		con->start();
+		std::thread request_thread([con] { 
+                	con->start(); 
+                });
+
+		request_thread.detach();
 	  }
         } else if (ec) {
           throw ec;

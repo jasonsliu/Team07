@@ -45,6 +45,14 @@ std::vector<std::pair<std::string, Response::ResponseCode>> ServerStats::getRequ
 }
 
 
+void ServerStats::lockMutex() {
+	sync_mutex.lock();
+}
+
+void ServerStats::unlockMutex() {
+	sync_mutex.unlock();
+}
+
 
 }
 }

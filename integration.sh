@@ -104,6 +104,40 @@ else
 	exit 14
 fi
 
+#checking two concurrent connections to the server. First one initially partial.
+echo "Opening socket and writing partial echo request"
+exec 3<>/dev/tcp/localhost/12345
+echo -e "GET / HTTP/1.1\r\nhost: localhost\r\nConnec" >&3
+
+# testing concurrent webserver 404
+echo "Running command curl -D headers.txt http://localhost:12345/non_existent_uri > response2.txt"
+curl -D headers2.txt http://localhost:12345/non_existent_uri > response2.txt
+
+# checking reponse headers
+echo "Checking response Headers."
+if grep -q "HTTP/1.* 200 OK" headers2.txt;then
+	if grep -q "Content-Type: text/plain" headers.txt;then
+		#Checking if content-length is correct
+		count=`wc -c response2.txt | awk '{print $1}'`
+		if grep -q "Content-Length: $count" headers2.txt;then
+			echo "All response headers are correct."
+		else
+			echo "HTTP response does not contain correct Content-Length."
+			exit 12
+		fi
+	else
+		echo "HTTP response does not contain Content-Type or is not set to text/plain."
+		exit 11
+	fi
+else
+	echo "HTTP response does not contain 200 OK status code."
+	exit 10
+fi
+
+# sending second half of partial request and checking the response
+echo -e "tion: close\r\n\r\n" >&3
+cat <&3 > response.txt
+
 # waiting for webserver to stop
 sleep 12
 
@@ -111,6 +145,8 @@ sleep 12
 echo "Removing headers.txt and response.txt."
 rm headers.txt
 rm response.txt
+rm headers2.txt
+rm response2.t2xt
 sleep 1
 
 # cleaning up

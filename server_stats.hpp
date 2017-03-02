@@ -1,6 +1,7 @@
 #ifndef SERVER_STATS_H
 #define SERVER_STATS_H
 
+#include <mutex>
 #include "request_handler.hpp"
 
 namespace http {
@@ -15,6 +16,9 @@ public:
     int getNumRequests();
     void clearAllEntries();
 
+    void lockMutex();
+    void unlockMutex();
+
     std::vector<std::pair<std::string, std::string>> getHandlers() const;
     std::vector<std::pair<std::string, Response::ResponseCode>> getRequests() const;
 
@@ -23,7 +27,7 @@ private:
 
     std::vector<std::pair<std::string, std::string>> handlers_;        
     std::vector<std::pair<std::string, Response::ResponseCode>> requests_;
-        
+    std::mutex sync_mutex;
 };
 
 }

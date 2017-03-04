@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <string.h>
 #include <boost/foreach.hpp>
+#include <thread>
 
 #include "server.hpp"
 //TODO: check necessary
@@ -47,17 +48,19 @@ void connection::do_read() {
       {
         request_ = Request::Parse(buffer_.data());
         std::string uri = request_->uri();
-        boost::filesystem::path path{uri};
-
-	auto pathIt = path.end();
 	std::string cur_prefix = uri;
-
+        
 	while((*handlers_)[cur_prefix] == nullptr && cur_prefix.compare("/")!=0 && !cur_prefix.empty())
 	{ 
-		--pathIt;
-		cur_prefix.erase(cur_prefix.end() - pathIt->string().length(), cur_prefix.end());
-		if((*handlers_)[cur_prefix] == nullptr)
-			cur_prefix.erase(cur_prefix.end() - 1, cur_prefix.end());
+		
+		if(!cur_prefix.empty() && cur_prefix.back() == '/')
+			cur_prefix.pop_back();
+		
+		if((*handlers_)[cur_prefix] != nullptr)
+			break;
+
+		while(!cur_prefix.empty() && cur_prefix.back() != '/')
+			cur_prefix.pop_back();
 	}
 	
     // assign request to proxy handler if referer field exists
@@ -71,12 +74,19 @@ void connection::do_read() {
 	if((*handlers_)[cur_prefix] != nullptr)
 	{       
 		(*handlers_)[cur_prefix]->HandleRequest(*request_, &response_);
-		ServerStats::getInstance().insertRequest(cur_prefix, response_.getResponseCode());
+		{		
+			boost::unique_lock<boost::mutex> lock(ServerStats::getInstance().sync_mutex);
+			ServerStats::getInstance().insertRequest(cur_prefix, response_.getResponseCode());
+		} //lock object destroyed => mutex unlocked
+		
 	}
 	else 
 	{
 		(*handlers_)["default"]->HandleRequest(*request_, &response_);
-		ServerStats::getInstance().insertRequest("default", response_.getResponseCode());
+		{	
+			boost::unique_lock<boost::mutex> lock(ServerStats::getInstance().sync_mutex);
+			ServerStats::getInstance().insertRequest("default", response_.getResponseCode());
+		} //lock object destroyed => mutex unlocked
 	}
         do_write();
       });
@@ -136,15 +146,21 @@ void server::InitHandlers() {
   		handler->Init(path->token, *(path->child_block_));
 		handlers_[path->token] = handler;
 
-		//inserting handler info to server stats (used for status handler)s
-		ServerStats::getInstance().insertHandler(path->token, path->handler_name);
+		//inserting handler info to server stats (used for status handler)
+		{		
+			boost::unique_lock<boost::mutex> lock(ServerStats::getInstance().sync_mutex);
+			ServerStats::getInstance().insertHandler(path->token, path->handler_name);
+		} //lock object destroyed => mutex unlocked
 	}
 
 	Path* default_ = std::get<1>(config->GetDefault());
 	auto handler = RequestHandler::CreateByName(default_->handler_name);
 	handler->Init(default_->token, *(default_->child_block_));
 	handlers_["default"] = handler;
-	ServerStats::getInstance().insertHandler("default", default_->handler_name);
+	{		
+		boost::unique_lock<boost::mutex> lock(ServerStats::getInstance().sync_mutex);
+		ServerStats::getInstance().insertHandler("default", default_->handler_name);
+	} //lock object destroyed => mutex unlocked
 }
 
 server::~server() {
@@ -175,8 +191,13 @@ void server::do_accept() {
 	  if(config != nullptr)
 	  {
           	std::shared_ptr<connection> con = std::make_shared<connection>(std::move(socket_));
+
 		con->handlers_ = &handlers_;
-		con->start();
+		std::thread con_thread([con] { 
+                	con->start(); 
+                });
+
+		con_thread.detach();
 	  }
         } else if (ec) {
           throw ec;

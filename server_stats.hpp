@@ -1,6 +1,7 @@
 #ifndef SERVER_STATS_H
 #define SERVER_STATS_H
 
+#include <boost/thread/mutex.hpp>
 #include "request_handler.hpp"
 
 namespace http {
@@ -18,12 +19,13 @@ public:
     std::vector<std::pair<std::string, std::string>> getHandlers() const;
     std::vector<std::pair<std::string, Response::ResponseCode>> getRequests() const;
 
+    boost::mutex sync_mutex;
+
 private:
     ServerStats() {} 
 
     std::vector<std::pair<std::string, std::string>> handlers_;        
     std::vector<std::pair<std::string, Response::ResponseCode>> requests_;
-        
 };
 
 }

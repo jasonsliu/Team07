@@ -45,6 +45,5 @@ std::vector<std::pair<std::string, Response::ResponseCode>> ServerStats::getRequ
 }
 
 
-
 }
 }

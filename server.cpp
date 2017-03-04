@@ -49,8 +49,8 @@ void connection::do_read() {
         request_ = Request::Parse(buffer_.data());
         std::string uri = request_->uri();
 	std::string cur_prefix = uri;
-	
-	while((*handlers_)[cur_prefix] == nullptr && cur_prefix.compare("/")!=0)
+        
+	while((*handlers_)[cur_prefix] == nullptr && cur_prefix.compare("/")!=0 && !cur_prefix.empty())
 	{ 
 		
 		if(!cur_prefix.empty() && cur_prefix.back() == '/')
@@ -63,6 +63,14 @@ void connection::do_read() {
 			cur_prefix.pop_back();
 	}
 	
+    // assign request to proxy handler if referer field exists
+    for (auto pair : request_->headers()) {
+        if (pair.first == "Referer") {
+            auto ref_uri = pair.second.find_last_of("/");
+            cur_prefix = pair.second.substr(ref_uri);
+        }
+    }
+
 	if((*handlers_)[cur_prefix] != nullptr)
 	{       
 		(*handlers_)[cur_prefix]->HandleRequest(*request_, &response_);

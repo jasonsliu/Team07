@@ -13,5 +13,5 @@ path /status StatusHandler {}
 default NotFoundHandler {}
 
 path /proxy ProxyHandler {
-    root www.ucla.edu;
+    root ucla.edu;
 }

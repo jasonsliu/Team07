@@ -22,7 +22,7 @@ class server
 public:
   server(const server&) = delete;
   server& operator=(const server&) = delete;
-  explicit server(const std::string& address, const std::string& sconfig_path);
+  explicit server(const std::string& sconfig_path);
   ~server();
   void run();
   

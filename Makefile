@@ -1,6 +1,6 @@
 CXX=g++
 CXXOPTIMIZE= -O2
-CXXFLAGS= -g -Wall -static-libgcc -static-libstdc++ -lm -pthread -Wl,-Bstatic -std=c++11
+CXXFLAGS= -g -Wall -static -static-libgcc -static-libstdc++ -lm -pthread -Wl,-Bstatic -std=c++11
 SRCFILES = server.cpp response.cpp request.cpp request_parser.cpp config.cc config_parser.cc request_handler.cpp echo_handler.cpp file_handler.cpp not_found_handler.cpp status_handler.cpp server_stats.cpp proxy_handler.cpp
 GTEST_DIR = googletest/googletest
 
@@ -11,6 +11,13 @@ all: webserver
 test: CXXFLAGS += -isystem ${GTEST_DIR}/include
 test: SRCFILES += config_parser_test.cc config_test.cc server_test.cpp response_test.cpp file_handler_test.cpp request_parser_test.cpp echo_handler_test.cpp not_found_handler_test.cpp status_handler_test.cpp server_stats_test.cpp proxy_handler_test.cpp ${GTEST_DIR}/src/gtest_main.cc libgtest.a
 test: | clean webserver_test
+
+build_image:
+	./build_image.sh
+
+run_image:
+	./build_image.sh
+	docker run --rm -t -p 8080:8080 httpserver
 
 deploy:
 	./deploy.sh

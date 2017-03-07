@@ -130,7 +130,7 @@ server::server(const std::string& sconfig_path)
 
 	boost::asio::ip::tcp::resolver resolver(io_service_);
 	//boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve({address, std::to_string(port)});
-	boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
+	boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve({"0.0.0.0", std::to_string(port)});
 	acceptor_.open(endpoint.protocol());
 	acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 	acceptor_.bind(endpoint);

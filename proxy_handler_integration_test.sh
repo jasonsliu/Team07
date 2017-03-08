@@ -19,10 +19,10 @@ echo "comparing responses"
 RC=0
 if cmp -s test_proxy_response test_host_response ; then
 	echo "integration test SUCCESS"
-	$RC=0
+	RC=0
 else
 	echo "integration test FAIL"
-	$RC=1
+	RC=1
 fi
 
 echo "cleaning up"

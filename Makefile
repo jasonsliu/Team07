@@ -38,3 +38,11 @@ integration:
 integration_302:
 	make clean && make
 	python reverse_proxy_302_integration.py
+
+spaceteam_proxy:
+	make clean && make
+	./proxy_handler_integration_test.sh
+
+spaceteam_302:
+	make clean && make
+	./spaceteam_302_redirect_integration_test.sh

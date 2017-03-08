@@ -46,7 +46,7 @@ RequestHandler::Status ProxyHandler::HandleRequest(const Request &request, Respo
 Response::ResponseCode ProxyHandler::RedirectRequest(std::string& location, const std::string& uri, Response* response) {
     boost::asio::io_service io_service;
     tcp::resolver resolver(io_service);
-    tcp::resolver::query query(location, "http");
+    tcp::resolver::query query(location, "80");
     tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
     tcp::socket socket(io_service);

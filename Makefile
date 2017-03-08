@@ -1,6 +1,7 @@
 CXX=g++
 CXXOPTIMIZE= -O2
-CXXFLAGS= -g -Wall -static -static-libgcc -static-libstdc++ -lm -pthread -Wl,-Bstatic -std=c++11
+CXXFLAGS= -g -Wall -static-libgcc -static-libstdc++ -pthread -Wl,-Bstatic -std=c++11
+LDFLAGS= -lboost_filesystem -lboost_system
 SRCFILES = server.cpp response.cpp request.cpp request_parser.cpp config.cc config_parser.cc request_handler.cpp echo_handler.cpp file_handler.cpp not_found_handler.cpp status_handler.cpp server_stats.cpp proxy_handler.cpp
 GTEST_DIR = googletest/googletest
 
@@ -16,7 +17,6 @@ build_image:
 	./build_image.sh
 
 run_image:
-	./build_image.sh
 	docker run --rm -t -p 8080:8080 httpserver
 
 deploy:
@@ -30,12 +30,12 @@ run_coverage:
 	gcov -r server.cpp response.cpp config.cc config_parser.cc request_parser.cpp echo_handler.cpp file_handler.cpp request.cpp not_found_handler.cpp status_handler.cpp server_stats.cpp proxy_handler.cpp base_
 
 webserver:
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(SRCFILES) -lboost_filesystem -lboost_system
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(SRCFILES) $(LDFLAGS)
 
 webserver_test: 
 	$(CXX) $(CXXFLAGS) -I${GTEST_DIR} -c ${GTEST_DIR}/src/gtest-all.cc
 	ar -rv libgtest.a gtest-all.o
-	$(CXX) -o $@ $^ $(CXXFLAGS) -fprofile-arcs -ftest-coverage $(SRCFILES) -lboost_filesystem -lboost_system
+	$(CXX) -o $@ $^ $(CXXFLAGS) -fprofile-arcs -ftest-coverage $(SRCFILES) $(LDFLAGS)
 
 
 clean:

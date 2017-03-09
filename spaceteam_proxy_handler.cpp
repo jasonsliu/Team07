@@ -72,8 +72,8 @@ RequestHandler::Status SpaceteamProxyHandler::HandleRequest(const Request& req, 
 
 		// send request to host
 		std::string request = "GET " + relative_uri + " HTTP/1.1\r\n"
-												+ "Host: " + host + ":" + port + "\r\n"
-												+ "Connection: close\r\n\r\n";
+			+ "Host: " + host + ":" + port + "\r\n"
+			+ "Connection: close\r\n\r\n";
 		boost::asio::write(sock, 
 											 boost::asio::buffer(request, request.length()));
 

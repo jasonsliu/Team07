@@ -12,7 +12,7 @@ int main (int argc, char* argv[]) {
 	return -1;
 	}
 	
-	http::server::server server_("127.0.0.1", argv[1]);
+	http::server::server server_(argv[1]);
 	server_.run();
 
 	return 0;

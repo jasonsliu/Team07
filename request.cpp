@@ -24,7 +24,8 @@ std::unique_ptr<Request> Request::Parse(const std::string& raw_request)
 	new_request->http_version_minor_ = request_parser_.req.http_version_minor;
 	for(size_t i = 0; i < request_parser_.req.headers.size(); i++)	
 		new_request->headers_.push_back(std::make_pair(request_parser_.req.headers[i].name, request_parser_.req.headers[i].value));
-	new_request->content_ = request_parser_.req.content;
+	auto pos = request_parser_.req.content.find("\r\n\r\n");
+	new_request->content_ = request_parser_.req.content.substr(0, pos+1);
 	new_request->bytes_ = request_parser_.req.bytes;
 	new_request->raw_request_ = raw_request;
 

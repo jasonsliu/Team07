@@ -109,17 +109,17 @@ void connection::do_write() {
 
 // SERVER CONNECTION RELATED FUNCTIONS
 
-server::server(const std::string& address, const std::string& sconfig_path)
+server::server(const std::string& sconfig_path)
   : io_service_(),
     acceptor_(io_service_),
   socket_(io_service_){
 
 	config = new ServerConfig(sconfig_path);
 
-	int addressNoRead = std::stoi(address);
+	/*int addressNoRead = std::stoi(address);
 	if (addressNoRead < 0) {
 		throw boost::system::errc::make_error_code(boost::system::errc::bad_address);
-	}
+	}*/
 
 	int port = config->GetPortNo();
 	if (port <= 0 || port > 65535) {
@@ -129,7 +129,8 @@ server::server(const std::string& address, const std::string& sconfig_path)
 	InitHandlers();
 
 	boost::asio::ip::tcp::resolver resolver(io_service_);
-	boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve({address, std::to_string(port)});
+	//boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve({address, std::to_string(port)});
+	boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
 	acceptor_.open(endpoint.protocol());
 	acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 	acceptor_.bind(endpoint);
